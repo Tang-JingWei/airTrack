@@ -8,20 +8,13 @@ track_window = None
 drag_start = None
 
 
-def draw_military_lock(img, x, y, w, h):
-    color = (0, 0, 255)
-    # 绘制矩形框
-    cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
-    # 绘制十字线
-    center_x = x + w // 2
-    center_y = y + h // 2
-    cross_size = 20  # 十字线的长度
-    # 水平十字线
-    cv2.line(img, (center_x - cross_size, center_y), (center_x + cross_size, center_y), color, 2)
-    # 垂直十字线
-    cv2.line(img, (center_x, center_y - cross_size), (center_x, center_y + cross_size), color, 2)
-    # 绘制角线
-    corner_length = 10  # 角线的长度
+def draw_military_lock(img, x, y, w, h, showLocked=False, color=None):
+    # color = (0, 0, 255)
+    # 根据w和h的最小值来计算角线的长度和字体大小
+    min_size = min(w, h)
+    corner_length = max(int(min_size * 0.1), 10)  # 角线长度至少为10
+    font_scale = max(min_size / 200, 0.5)  # 字体大小至少为0.7
+
     # 左上角
     cv2.line(img, (x, y), (x + corner_length, y), color, 2)
     cv2.line(img, (x, y), (x, y + corner_length), color, 2)
@@ -34,7 +27,10 @@ def draw_military_lock(img, x, y, w, h):
     # 右下角
     cv2.line(img, (x + w, y + h), (x + w - corner_length, y + h), color, 2)
     cv2.line(img, (x + w, y + h), (x + w, y + h - corner_length), color, 2)
-    cv2.putText(img, "LOCKED", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+
+    # 根据计算的字体大小绘制文本
+    if showLocked:
+        cv2.putText(img, "LOCKED", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, 2)
 
 
 # 鼠标选框（做目标跟踪框）

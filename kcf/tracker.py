@@ -1,4 +1,7 @@
 # -*-coding:utf-8-*-
+import sys
+from os.path import abspath, join, dirname
+sys.path.insert(0, join(abspath(dirname(__file__))))
 import numpy as np
 import cv2
 import fhog
@@ -181,7 +184,7 @@ class KCFTracker:
             # TPAMI   #interp_factor = 0.02   #sigma = 0.5
             self.cell_size = 4 # HOG cell size; HOG元胞数组尺寸
 
-            print('Numba Compiler initializing, wait for a while.')
+            # print('Numba Compiler initializing, wait for a while.')
             
         else: # raw gray-scale image # aka CSK tracker
             self.interp_factor = 0.075

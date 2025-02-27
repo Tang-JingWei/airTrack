@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'form.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.6.3
+## Created by: Qt User Interface Compiler version 6.8.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -24,7 +24,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1023, 675)
+        MainWindow.resize(668, 535)
         self.author = QAction(MainWindow)
         self.author.setObjectName(u"author")
         self.version = QAction(MainWindow)
@@ -33,22 +33,26 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName(u"centralwidget")
         self.trackButton = QPushButton(self.centralwidget)
         self.trackButton.setObjectName(u"trackButton")
-        self.trackButton.setGeometry(QRect(10, 510, 161, 71))
+        self.trackButton.setGeometry(QRect(10, 400, 161, 71))
         font = QFont()
         font.setPointSize(20)
         self.trackButton.setFont(font)
         self.imageLabel = QLabel(self.centralwidget)
         self.imageLabel.setObjectName(u"imageLabel")
-        self.imageLabel.setGeometry(QRect(10, 10, 640, 480))
+        self.imageLabel.setGeometry(QRect(10, 10, 640, 360))
         font1 = QFont()
         font1.setPointSize(24)
         self.imageLabel.setFont(font1)
         self.imageLabel.setTextFormat(Qt.RichText)
         self.imageLabel.setAlignment(Qt.AlignCenter)
+        self.clickButton = QPushButton(self.centralwidget)
+        self.clickButton.setObjectName(u"clickButton")
+        self.clickButton.setGeometry(QRect(200, 400, 161, 71))
+        self.clickButton.setFont(font)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1023, 34))
+        self.menubar.setGeometry(QRect(0, 0, 668, 24))
         self.menu = QMenu(self.menubar)
         self.menu.setObjectName(u"menu")
         MainWindow.setMenuBar(self.menubar)
@@ -71,6 +75,7 @@ class Ui_MainWindow(object):
         self.version.setText(QCoreApplication.translate("MainWindow", u"\u7248\u672c", None))
         self.trackButton.setText(QCoreApplication.translate("MainWindow", u"\u9501\u5b9a", None))
         self.imageLabel.setText(QCoreApplication.translate("MainWindow", u"\u5b9e\u65f6\u753b\u9762", None))
+        self.clickButton.setText(QCoreApplication.translate("MainWindow", u"\u6f2b\u6e38", None))
         self.menu.setTitle(QCoreApplication.translate("MainWindow", u"\u5173\u4e8e", None))
     # retranslateUi
 
