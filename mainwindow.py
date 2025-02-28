@@ -11,9 +11,6 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QPen, QIcon
 
-import rospy
-import rospkg
-from object_detect.msg import Target
 import os
 
 import kcf.tracker
@@ -39,21 +36,7 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        #1.初始化 ROS 节点
-        rospy.init_node("airwindow", anonymous=True)    # 初始化结点
-        #2.创建发布者对象
-        self.target_pub = rospy.Publisher("target_info", Target, queue_size=100)
-        #3.组织消息
-        self.target = Target()
-        self.target.detect_flag = 0
-        self.target.cx = 0
-        self.target.cy = 0
-        self.target.dx = 0
-        self.target.dy = 0
-
-        self.rate = rospy.Rate(1000)
-
-        self.cap = cv2.VideoCapture("/Users/jingwei/Documents/projects/cv-test/car.mp4")
+        self.cap = cv2.VideoCapture(0)
         self.cap_width = 640
         self.cap_height = 360
         self.fps = 0
@@ -202,97 +185,82 @@ class MainWindow(QMainWindow):
 
     # QT显示图片函数
     def showimg(self):
-        if not rospy.is_shutdown():
-            ret, frame = self.cap.read()
+        ret, frame = self.cap.read()
 
-            if ret:
-                start = cv2.getTickCount()
+        if ret:
+            start = cv2.getTickCount()
 
-                frame = cv2.resize(frame, (self.cap_width, self.cap_height))
-                frame = cv2.flip(frame, 1)
+            frame = cv2.resize(frame, (self.cap_width, self.cap_height))
+            frame = cv2.flip(frame, 1)
 
-                # 开启KCF追踪 TRACK_MOVE 状态 | CLICK_MOVE 状态
-                if (self.mission_flag == MOVEMISSON.TRACK_MOVE) or (self.mission_flag == MOVEMISSON.CLICK_MOVE):
-                    if self.track_window is not None:
-                        if self.mission_initialized == False:
-                            exact_track_window = list(self.track_window)
-                            exact_track_window[2] = exact_track_window[2] - exact_track_window[0]
-                            exact_track_window[3] = exact_track_window[3] - exact_track_window[1]
-                            exact_track_window = tuple(exact_track_window)
+            # 开启KCF追踪 TRACK_MOVE 状态 | CLICK_MOVE 状态
+            if (self.mission_flag == MOVEMISSON.TRACK_MOVE) or (self.mission_flag == MOVEMISSON.CLICK_MOVE):
+                if self.track_window is not None:
+                    if self.mission_initialized == False:
+                        exact_track_window = list(self.track_window)
+                        exact_track_window[2] = exact_track_window[2] - exact_track_window[0]
+                        exact_track_window[3] = exact_track_window[3] - exact_track_window[1]
+                        exact_track_window = tuple(exact_track_window)
 
-                            self.tracker = kcf.tracker.KCFTracker(True, True, True) 
-                            self.tracker.init(exact_track_window, frame)
-                            self.mission_initialized = True
+                        self.tracker = kcf.tracker.KCFTracker(True, True, True) 
+                        self.tracker.init(exact_track_window, frame)
+                        self.mission_initialized = True
 
-                        try:
-                            bbox = self.tracker.update(frame)
-                            bbox = list(map(int, bbox))
+                    try:
+                        bbox = self.tracker.update(frame)
+                        bbox = list(map(int, bbox))
 
-                            # Tracking success
-                            p1 = (int(bbox[0]), int(bbox[1]))
-                            p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-                            # cv2.rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
-                            kcf.run.draw_military_lock(frame, p1[0], p1[1], p2[0] - p1[0], p2[1] - p1[1], False, (0, 0, 255))
-                            # print(f"目标锁定：\r左上角坐标为 {p1} 右下角坐标为 {p2}", end='', flush=True)
-
-                            self.target.detect_flag = 1
-                            self.target.cx = int(((p2[0] - p1[0]) / 2 + p1[0]) / self.cap_width * 100)
-                            self.target.cy = int(((p2[1] - p1[1]) / 2 + p1[1]) / self.cap_height * 100)
-                            self.target.dx = int((p2[0] - p1[0]) / self.cap_width * 100)
-                            self.target.dy = int((p2[1] - p1[1]) / self.cap_height * 100)
-                        except Exception as e:
-                            print(e)
-                            self.target.detect_flag = 0 # 目标丢失，取消追踪
-                            self.mission_initialized = False
-                            self.track_window = None
-
-                # NONE_MOVE 状态 
-                if (self.mission_flag == MOVEMISSON.NONE_MOVE) or (self.debug_draw == True):
-                    self.target.detect_flag = 0 # 取消跟踪
-                    if self.track_window is not None:
-                        cv2.rectangle(frame, (self.track_window[0], self.track_window[1]),
-                                    (self.track_window[2], self.track_window[3]), (0, 255, 255), 2) # 黄色
-                    elif self.selection is not None:
-                        cv2.rectangle(frame, (self.selection[0], self.selection[1]),
-                                    (self.selection[2], self.selection[3]), (0, 255, 0), 2) # 绿色
-
-                if self.mission_flag == MOVEMISSON.CLICK_MOVE:
-                    # 绘制中间的框
-                    if self.show_wheel_box:
-                        center_x = self.cap_width // 2
-                        center_y = self.cap_height // 2
-                        p1 = (center_x - self.click_window_size, center_y - self.click_window_size)
-                        p2 = (center_x + self.click_window_size, center_y + self.click_window_size)
+                        # Tracking success
+                        p1 = (int(bbox[0]), int(bbox[1]))
+                        p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+                        # cv2.rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
                         kcf.run.draw_military_lock(frame, p1[0], p1[1], p2[0] - p1[0], p2[1] - p1[1], False, (0, 0, 255))
-                        # cv2.rectangle(frame, p1, p2, (255, 0, 0), 2)
+                        # print(f"目标锁定：\r左上角坐标为 {p1} 右下角坐标为 {p2}", end='', flush=True)
+                    except Exception as e:
+                        print(e)
+                        self.mission_initialized = False
+                        self.track_window = None
 
-                self.fps = cv2.getTickFrequency() / (cv2.getTickCount() - start)
+            # NONE_MOVE 状态 
+            if (self.mission_flag == MOVEMISSON.NONE_MOVE) or (self.debug_draw == True):
+                if self.track_window is not None:
+                    cv2.rectangle(frame, (self.track_window[0], self.track_window[1]),
+                                (self.track_window[2], self.track_window[3]), (0, 255, 255), 2) # 黄色
+                elif self.selection is not None:
+                    cv2.rectangle(frame, (self.selection[0], self.selection[1]),
+                                (self.selection[2], self.selection[3]), (0, 255, 0), 2) # 绿色
 
-                # 打印追踪目标信息
-                # print(f"\rdetect_flag, cx, cy, dx, dy: {self.target.detect_flag}, {self.target.cx}, {self.target.cy}, {self.target.dx}, {self.target.dy}", end='', flush=True)
-                
-                # 发布消息
-                self.target_pub.publish(self.target)
-                self.rate.sleep()  #休眠
+            if self.mission_flag == MOVEMISSON.CLICK_MOVE:
+                # 绘制中间的框
+                if self.show_wheel_box:
+                    center_x = self.cap_width // 2
+                    center_y = self.cap_height // 2
+                    p1 = (center_x - self.click_window_size, center_y - self.click_window_size)
+                    p2 = (center_x + self.click_window_size, center_y + self.click_window_size)
+                    kcf.run.draw_military_lock(frame, p1[0], p1[1], p2[0] - p1[0], p2[1] - p1[1], False, (0, 0, 255))
+                    # cv2.rectangle(frame, p1, p2, (255, 0, 0), 2)
 
-                # 画面添加额外信息
-                # 帧率
-                cv2.putText(frame, "FPS: " + ("99+" if self.fps > 99 else str(int(self.fps))), (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (50, 170, 50), 1)
-                # 目标中心坐标 
-                cv2.putText(frame, "Target: (" + str(self.target.cx) + "%, " + str(self.target.cy) + '%)', (5, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (50, 170, 50), 1)
-                cross_length = 20
-                # 十字线
-                cv2.line(frame, (int(self.cap_width / 2) - cross_length, int(self.cap_height / 2)), (int(self.cap_width / 2) + cross_length, int(self.cap_height / 2)), (0, 255, 0), 1)
-                cv2.line(frame, (int(self.cap_width / 2), int(self.cap_height / 2) - cross_length), (int(self.cap_width / 2), int(self.cap_height / 2) + cross_length), (0, 255, 0), 1)
+            self.fps = cv2.getTickFrequency() / (cv2.getTickCount() - start)
 
-                # 显示最终图片
-                im = QImage(frame.data, frame.shape[1], frame.shape[0], frame.shape[2] * frame.shape[1],
-                            QImage.Format_BGR888)
-                self.ui.imageLabel.setPixmap(QPixmap.fromImage(im))
-            # 否则报错
-            else:
-                print("摄像头读取错误, 退出程序")
-                exit(1)
+            # 打印追踪目标信息
+            # print(f"\rdetect_flag, cx, cy, dx, dy: {self.target.detect_flag}, {self.target.cx}, {self.target.cy}, {self.target.dx}, {self.target.dy}", end='', flush=True)
+
+            # 画面添加额外信息
+            # 帧率
+            cv2.putText(frame, "FPS: " + ("99+" if self.fps > 99 else str(int(self.fps))), (5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (50, 170, 50), 1)
+            cross_length = 20
+            # 十字线
+            cv2.line(frame, (int(self.cap_width / 2) - cross_length, int(self.cap_height / 2)), (int(self.cap_width / 2) + cross_length, int(self.cap_height / 2)), (0, 255, 0), 1)
+            cv2.line(frame, (int(self.cap_width / 2), int(self.cap_height / 2) - cross_length), (int(self.cap_width / 2), int(self.cap_height / 2) + cross_length), (0, 255, 0), 1)
+
+            # 显示最终图片
+            im = QImage(frame.data, frame.shape[1], frame.shape[0], frame.shape[2] * frame.shape[1],
+                        QImage.Format_BGR888)
+            self.ui.imageLabel.setPixmap(QPixmap.fromImage(im))
+        # 否则报错
+        else:
+            print("摄像头读取错误, 退出程序")
+            exit(1)
 
 
 if __name__ == "__main__":
