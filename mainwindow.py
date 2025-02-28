@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture("video/car.mp4")
         self.cap_width = 640
         self.cap_height = 360
         self.fps = 0
@@ -188,6 +188,7 @@ class MainWindow(QMainWindow):
         ret, frame = self.cap.read()
 
         if ret:
+            print(frame.shape)
             start = cv2.getTickCount()
 
             frame = cv2.resize(frame, (self.cap_width, self.cap_height))
